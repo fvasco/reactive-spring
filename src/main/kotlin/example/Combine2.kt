@@ -1,6 +1,6 @@
 package example
 
-import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.future.await
 import mapNotNull
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
