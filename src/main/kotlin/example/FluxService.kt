@@ -1,6 +1,7 @@
 package example
 
-import kotlinx.coroutines.experimental.reactor.flux
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.reactor.flux
 import reactor.core.publisher.Flux
 import java.util.*
 import java.util.stream.Stream
@@ -15,7 +16,7 @@ class FluxService {
 
     fun emptyFlux() = Flux.empty<Int>()
 
-    fun fluxGenerator() = flux {
+    fun fluxGenerator() = GlobalScope.flux {
         for (i in 1..3)
             send(i)
     }

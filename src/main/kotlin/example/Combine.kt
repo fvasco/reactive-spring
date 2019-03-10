@@ -1,12 +1,13 @@
 package example
 
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.reactive.awaitSingle
-import kotlinx.coroutines.experimental.reactor.mono
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.reactive.awaitSingle
+import kotlinx.coroutines.reactor.mono
+import kotlinx.coroutines.time.delay
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
-import java.util.concurrent.TimeUnit
+import java.time.Duration
 
 @RestController
 class Combine {
@@ -15,19 +16,19 @@ class Combine {
         val hello = getHello()
         return getWorld()
                 .flatMap { world ->
-                    mono {
+                    GlobalScope.mono {
                         hello.awaitSingle() + ' ' + world
                     }
                 }
     }
 }
 
-fun getHello() = mono {
-    delay(1, TimeUnit.SECONDS)
+fun getHello() = GlobalScope.mono {
+    delay(Duration.ofSeconds(1))
     return@mono "Hello"
 }
 
-fun getWorld() = mono {
-    delay(1, TimeUnit.SECONDS)
+fun getWorld() = GlobalScope.mono {
+    delay(Duration.ofSeconds(1))
     return@mono "world"
 }

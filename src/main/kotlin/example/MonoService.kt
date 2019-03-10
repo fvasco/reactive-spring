@@ -1,7 +1,8 @@
 package example
 
-import kotlinx.coroutines.experimental.future.future
-import kotlinx.coroutines.experimental.reactor.mono
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.future.future
+import kotlinx.coroutines.reactor.mono
 import reactor.core.publisher.Mono
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -18,9 +19,9 @@ class MonoService {
 
     fun mono() = Mono.just("hello")
 
-    fun futureGenerator() = future { "hello" }
+    fun futureGenerator() = GlobalScope.future { "hello" }
 
-    fun emptyMonoGenerator() = mono { null }
+    fun emptyMonoGenerator() = GlobalScope.mono { null }
 
-    fun monoGenerator() = mono { "hello" }
+    fun monoGenerator() = GlobalScope.mono { "hello" }
 }
