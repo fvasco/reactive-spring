@@ -2,8 +2,10 @@ package dao
 
 import data.Sensor
 import data.SensorType
-import kotlinx.coroutines.experimental.reactor.flux
-import kotlinx.coroutines.experimental.time.delay
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.reactor.flux
+import kotlinx.coroutines.time.delay
 import org.springframework.stereotype.Component
 import java.time.Duration
 import java.util.*
@@ -11,7 +13,7 @@ import java.util.*
 @Component
 class IotClient {
 
-    fun query(sensor: Sensor) = flux {
+    fun query(sensor: Sensor) = GlobalScope.flux {
         var step = 1
         while (isActive) {
             delay(latency + Duration.ofMillis(sensor.id.toLong()))

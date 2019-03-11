@@ -1,11 +1,12 @@
 package example
 
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.reactor.flux
-import kotlinx.coroutines.experimental.reactor.mono
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.reactor.flux
+import kotlinx.coroutines.reactor.mono
+import kotlinx.coroutines.time.delay
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
-import java.util.concurrent.TimeUnit
+import java.time.Duration
 
 @RestController
 class FlatMap {
@@ -20,12 +21,12 @@ class FlatMap {
                     .flatMap { id -> getValue(id) }
 }
 
-fun getValue(id: Int) = mono {
-    delay(1, TimeUnit.SECONDS)
+fun getValue(id: Int) = GlobalScope.mono {
+    delay(Duration.ofSeconds(1))
     return@mono id
 }
 
-fun getIds() = flux {
+fun getIds() = GlobalScope.flux {
     repeat(1000) { i ->
         send(i)
     }

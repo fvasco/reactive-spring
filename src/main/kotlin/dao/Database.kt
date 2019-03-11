@@ -2,15 +2,16 @@ package dao
 
 import data.SensorConfiguration
 import data.SensorType
-import kotlinx.coroutines.experimental.reactor.flux
-import kotlinx.coroutines.experimental.time.delay
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.reactor.flux
+import kotlinx.coroutines.time.delay
 import org.springframework.stereotype.Component
 import java.time.Duration
 
 @Component
 class Database {
 
-    fun loadConfiguration() = flux {
+    fun loadConfiguration() = GlobalScope.flux {
         delay(latency)
         send(SensorConfiguration(SensorType.SALINITY, "FRESH", 0.0..0.5))
         send(SensorConfiguration(SensorType.SALINITY, "BRACKISH", 0.5..30.0))
