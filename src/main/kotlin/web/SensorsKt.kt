@@ -4,9 +4,9 @@ import dao.ControlUnit
 import dao.Database
 import dao.IotClient
 import data.Sensor
-import kotlinx.coroutines.experimental.future.await
-import kotlinx.coroutines.experimental.reactive.awaitFirst
-import kotlinx.coroutines.experimental.reactive.awaitSingle
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitSingle
 import mapNotNull
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
@@ -14,6 +14,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.ParallelFlux
 import java.util.*
 
+@Suppress("unused")
 @RestController
 class SensorsKt(
         private val database: Database,
@@ -57,7 +58,9 @@ class SensorsKt(
                             .collectList()
                             .awaitSingle()
                             .filter { it.isFinite() }
-                            .average()
+                            .takeIf { it.isNotEmpty() }
+                            ?.average()
+                            ?: return@mapNotNull null
                     val rangeMap = rangeMapFuture.await()
                     if (average !in rangeMap.getValue(sensor.type to sensor.context))
                         AbstractMap.SimpleEntry(sensor, average)

@@ -1,6 +1,4 @@
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactor.mono
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -26,17 +24,3 @@ fun <T : Any, R : Any> Flux<T>.mapNotNull(transform: suspend (T) -> R?) =
  */
 fun <T : Any, R : Any> ParallelFlux<T>.mapNotNull(transform: suspend (T) -> R?) =
         flatMap { elem -> GlobalScope.mono { transform(elem) } }
-
-/**
- * Consume each Flux element in parallel
- */
-suspend fun <T : Any, R : Any> Flux<T>.consumeEachParallel(block: suspend (T) -> R?) {
-    map {
-        GlobalScope.launch {
-            block(it)
-        }
-    }
-            .collectList()
-            .awaitSingle()
-            .forEach { it.join() }
-}
