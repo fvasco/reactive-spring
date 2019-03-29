@@ -4,14 +4,15 @@ import dao.ControlUnit
 import dao.Database
 import dao.IotClient
 import data.Sensor
-import kotlinx.coroutines.future.await
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitSingle
-import mapNotNull
+import kotlinx.coroutines.reactive.consumeEach
+import kotlinx.coroutines.reactor.flux
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
-import reactor.core.publisher.ParallelFlux
 import java.util.*
 
 @Suppress("unused")
@@ -32,39 +33,36 @@ class SensorsKt(
      * Return only sensor with valid (finite) value
      */
     @GetMapping("/sensorsKt/active")
-    fun countActive(): ParallelFlux<Sensor> = controlUnit
-            .getSensors()
-            .parallel()
-            .mapNotNull { sensor ->
+    fun countActive(): Flux<Sensor> = GlobalScope.flux {
+        controlUnit.getSensors().consumeEach { sensor ->
+            launch {
                 val value = iotClient.query(sensor).awaitFirst()
-                sensor.takeIf { value.isFinite() }
+                if (value.isFinite()) send(sensor)
             }
+        }
+    }
 
     /**
      * Associate each sensor with the average over three values out of range.
      */
     @GetMapping("/sensorsKt/check")
-    fun checkSensor(): ParallelFlux<Map.Entry<Sensor, Double>> {
-        val rangeMapFuture = database.loadConfiguration()
-                .collectMap({ it.sensorType to it.context }, { it.validRange })
-                .toFuture()
+    fun checkSensor() = GlobalScope.flux {
+        val configurationDeferred = async { database.loadConfiguration().collectList().awaitFirst() }
+        controlUnit.getSensors().consumeEach { sensor ->
+            launch {
+                val average = iotClient.query(sensor)
+                        .take(3)
+                        .collectList().awaitFirst()
+                        .filter { it.isFinite() }
+                        .takeIf { it.isNotEmpty() }
+                        ?.average()
 
-        return controlUnit
-                .getSensors()
-                .parallel()
-                .mapNotNull { sensor ->
-                    val average = iotClient.query(sensor)
-                            .take(3)
-                            .collectList()
-                            .awaitSingle()
-                            .filter { it.isFinite() }
-                            .takeIf { it.isNotEmpty() }
-                            ?.average()
-                            ?: return@mapNotNull null
-                    val rangeMap = rangeMapFuture.await()
-                    if (average !in rangeMap.getValue(sensor.type to sensor.context))
-                        AbstractMap.SimpleEntry(sensor, average)
-                    else null
+                val configuration =
+                        checkNotNull(configurationDeferred.await().find { it.sensorType == sensor.type && it.context == sensor.context })
+                if (average != null && average !in configuration.validRange) {
+                    send(AbstractMap.SimpleEntry(sensor, average)) // sent to Flux
                 }
+            }
+        }
     }
 }
